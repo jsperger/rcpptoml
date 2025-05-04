@@ -58,10 +58,12 @@ parseTOML <- function(input, verbose=FALSE, fromFile=TRUE, includize=FALSE, esca
 
 ##' Construct a \sQuote{toml} object
 ##' @param parsed list object with the parsed content
-##' @inheritParams input
-##' @param table_name [character] Super-table header. NULL when the object is the root TOML file. Otherwise the parents of the current table.
+##' @param file_name [character] path to the TOML file `parsed` was generated from
+##' @param table_name [character] Table header. NULL when the object is the root
+##' TOML file. Otherwise the header of the current table.
 ##' @return A list object with the parsed content as an S3 object of class \sQuote{toml}
 ##' @keywords internal
+##' @noRd
 newTOML <- function(parsed, file_name, table_name = NULL){
   stopifnot(is.list(parsed))
   structure(parsed,
@@ -90,4 +92,38 @@ summary.toml <- function(object, ...) {
     cat("  ", paste(names(object), collapse=", "), "\n")
     cat("read from '", attr(object, "file"), "'\n", sep="")
     invisible(NULL)
+}
+
+##' Subsetting preserves \sQuote{toml} class for list responses
+##' @noRd 
+`[[.toml` <- function(x, i) {
+  subset <- NextMethod()
+  if (is.list(subset)) {
+    updated_table_name <- tableNameTOML(x = x, i = i)
+    subset <- newTOML(
+      parsed = subset,
+      file_name = attr(x, "file"),
+      table_name = updated_table_name)
+  }
+  subset
+}
+
+
+##' Create a string with the updated table name
+##'
+##' Append the name of the current index to the existing table name formatted
+##' using TOML's dot naming scheme in the style
+##' of the TOML e.g. [foo.bar]
+##' 
+##' @noRd
+##' @keywords internal 
+tableNameTOML <- function(x, i) {
+  table_name <- if(is.character(i)) i else names(x)[i]
+  parent_table <- attr(x, "table")
+
+    if(!is.null(parent_table)) {
+      table_name <- paste(parent_table, table_name, sep = ".")
+  }
+
+  return(table_name)
 }
