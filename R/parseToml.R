@@ -51,9 +51,23 @@ parseTOML <- function(input, verbose=FALSE, fromFile=TRUE, includize=FALSE, esca
     } else {
         toml <- tomlparseImpl(enc2utf8(input), fromFile, escape)
     }
-    class(toml) <- c("toml", "list")
-    attr(toml, "file") <- input
+
+    toml <- newTOML(parsed = toml, file_name = input)
     toml
+}
+
+##' Construct a \sQuote{toml} object
+##' @param parsed list object with the parsed content
+##' @inheritParams input
+##' @param table_name [character] Super-table header. NULL when the object is the root TOML file. Otherwise the parents of the current table.
+##' @return A list object with the parsed content as an S3 object of class \sQuote{toml}
+##' @keywords internal
+newTOML <- function(parsed, file_name, table_name = NULL){
+  stopifnot(is.list(parsed))
+  structure(parsed,
+    class = c("toml", "list"),
+    file = file_name,
+    table = table_name)
 }
 
 ## alias for now, to be renamed
